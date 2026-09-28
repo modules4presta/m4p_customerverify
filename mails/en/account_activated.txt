@@ -1,0 +1,9 @@
+Your account has been activated - {shop_name}
+
+Hello {firstname} {lastname},
+
+Your account at {shop_name} has been verified and activated.
+You can sign in now: {login_url}
+
+Kind regards,
+{shop_name}

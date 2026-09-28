@@ -1,0 +1,9 @@
+Nowe konto do weryfikacji - {shop_name}
+
+Zarejestrowano nowe konto klienta oczekujące na zatwierdzenie:
+
+Imię i nazwisko: {firstname} {lastname}
+E-mail: {email}
+ID klienta: {id_customer}
+
+Aby zatwierdzić, wejdź w panelu do: Klienci, znajdź klienta i ustaw konto jako aktywne.

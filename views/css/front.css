@@ -1,0 +1,73 @@
+/*
+ * m4p_customerverify
+ *
+ * @author    Modules4Presta <contact@modules4presta.io>
+ * @copyright 2026 Nice Code sp. z o.o. (Modules4Presta)
+ * @license   https://opensource.org/licenses/MIT MIT License
+ */
+
+.m4p-cv-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.m4p-cv-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 24, 61, .55);
+}
+
+.m4p-cv-modal__dialog {
+    position: relative;
+    width: 92%;
+    max-width: 460px;
+    padding: 34px 28px 28px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+    text-align: center;
+    animation: m4pCvIn .2s ease;
+}
+
+.m4p-cv-modal__icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #2e9c4d;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 64px;
+}
+
+.m4p-cv-modal__title {
+    margin: 0 0 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0d183d;
+}
+
+.m4p-cv-modal__text {
+    margin: 0 0 22px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #444;
+}
+
+.m4p-cv-modal__btn {
+    min-width: 160px;
+}
+
+body.m4p-cv-modal-open {
+    overflow: hidden;
+}
+
+@keyframes m4pCvIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+}

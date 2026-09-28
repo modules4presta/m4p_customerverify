@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file original="module" source-language="en-US" target-language="pl-PL" datatype="plaintext">
+    <body>
+      <trans-unit id="7526beedb7628c1687847100347be867">
+        <source>Your account is waiting for approval</source>
+        <target>Konto czeka na zatwierdzenie</target>
+      </trans-unit>
+      <trans-unit id="122a7853e01dd6ab7148672c54ba1949">
+        <source>Your account has been registered and is waiting for an administrator to approve it. You will get an e-mail with a link to sign in once it is active.</source>
+        <target>Twoje konto zostało zarejestrowane i czeka na zatwierdzenie przez administratora. Gdy konto będzie aktywne, dostaniesz e-mail z linkiem do logowania.</target>
+      </trans-unit>
+      <trans-unit id="78e981599281c16fe016b55b136edf5f">
+        <source>Got it</source>
+        <target>Rozumiem</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

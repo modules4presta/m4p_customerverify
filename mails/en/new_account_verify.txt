@@ -1,0 +1,9 @@
+A new account is waiting for approval - {shop_name}
+
+A new customer account has been registered and is waiting for approval:
+
+Name: {firstname} {lastname}
+E-mail: {email}
+Customer ID: {id_customer}
+
+To approve it, open Customers in the back office, find this account and set it to active.

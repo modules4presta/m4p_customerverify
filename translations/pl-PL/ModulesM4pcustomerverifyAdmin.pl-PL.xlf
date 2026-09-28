@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file original="module" source-language="en-US" target-language="pl-PL" datatype="plaintext">
+    <body>
+      <trans-unit id="2ae5220318ac1238a4030cc9ddeb9c45">
+        <source>Customer account verification</source>
+        <target>Weryfikacja konta klienta</target>
+      </trans-unit>
+      <trans-unit id="b88b6e2795bfe32ab08805e9c692666b">
+        <source>Keeps new accounts inactive until an administrator approves them, and tells both sides by e-mail.</source>
+        <target>Nowe konta pozostają nieaktywne do czasu zatwierdzenia przez administratora, a obie strony dostają e-mail.</target>
+      </trans-unit>
+      <trans-unit id="9266f561b8e6bda87fa6063f26abd673">
+        <source>A new account is waiting for approval</source>
+        <target>Nowe konto czeka na zatwierdzenie</target>
+      </trans-unit>
+      <trans-unit id="c5093f03229416cc06a625654429d7f2">
+        <source>Your account has been activated</source>
+        <target>Twoje konto zostało aktywowane</target>
+      </trans-unit>
+      <trans-unit id="d11f83faa9a91703b28a71c4539f82eb">
+        <source>That e-mail address is not valid, so nothing was saved.</source>
+        <target>Podany adres e-mail jest nieprawidłowy — nic nie zapisano.</target>
+      </trans-unit>
+      <trans-unit id="f38f5974cdc23279ffe6d203641a8bdf">
+        <source>Settings updated.</source>
+        <target>Ustawienia zapisane.</target>
+      </trans-unit>
+      <trans-unit id="309f15f9a3d47137d67a817e7e6570c1">
+        <source>Verification settings</source>
+        <target>Ustawienia weryfikacji</target>
+      </trans-unit>
+      <trans-unit id="56d84ed8483c622600ccc72f3d20fecc">
+        <source>Hold new accounts for approval</source>
+        <target>Wstrzymuj nowe konta do zatwierdzenia</target>
+      </trans-unit>
+      <trans-unit id="93cba07454f06a4a960172bbd6e2a435">
+        <source>Yes</source>
+        <target>Tak</target>
+      </trans-unit>
+      <trans-unit id="bafd7322c6e97d25b6299b5d6fe8920b">
+        <source>No</source>
+        <target>Nie</target>
+      </trans-unit>
+      <trans-unit id="e480686f42911546de1f314c272014e8">
+        <source>Notification e-mail</source>
+        <target>E-mail do powiadomień</target>
+      </trans-unit>
+      <trans-unit id="54c7d78c7713e069f349ae75414616a7">
+        <source>Where the notice about an account waiting for approval is sent. Empty means the shop e-mail. Notices currently go to %email%.</source>
+        <target>Adres, na który trafia powiadomienie o koncie czekającym na zatwierdzenie. Puste pole oznacza e-mail sklepu. Obecnie powiadomienia idą na %email%.</target>
+      </trans-unit>
+      <trans-unit id="c9cc8cce247e49bae79f15173ce97354">
+        <source>Save</source>
+        <target>Zapisz</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

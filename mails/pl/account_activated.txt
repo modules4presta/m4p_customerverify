@@ -1,0 +1,9 @@
+Twoje konto zostało aktywowane - {shop_name}
+
+Witaj {firstname} {lastname},
+
+Twoje konto w sklepie {shop_name} zostało zweryfikowane i aktywowane.
+Możesz się teraz zalogować: {login_url}
+
+Pozdrawiamy,
+{shop_name}
