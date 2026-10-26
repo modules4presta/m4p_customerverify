@@ -1,9 +1,11 @@
-Nowe konto do weryfikacji - {shop_name}
+Nowe konto firmowe do weryfikacji - {shop_name}
 
-Zarejestrowano nowe konto klienta oczekujące na zatwierdzenie:
+Zarejestrowano nowe konto firmowe oczekujące na zatwierdzenie:
 
 Imię i nazwisko: {firstname} {lastname}
 E-mail: {email}
+Firma: {company}
+NIP / VAT UE: {tax_number}
 ID klienta: {id_customer}
 
-Aby zatwierdzić, wejdź w panelu do: Klienci, znajdź klienta i ustaw konto jako aktywne.
+Zatwierdź albo odrzuć je w panelu: Klienci → Konta do akceptacji. Klient otrzyma wtedy e-mail.

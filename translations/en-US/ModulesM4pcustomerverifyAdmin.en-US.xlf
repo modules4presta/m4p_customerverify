@@ -54,6 +54,70 @@
         <source>Save</source>
         <target>Save</target>
       </trans-unit>
+      <trans-unit id="2a93414090d6a5f20716df30e109537b">
+        <source>Your company account request</source>
+        <target>Your company account request</target>
+      </trans-unit>
+      <trans-unit id="ae451ab5d29061321061b7cef0c46b06">
+        <source>Do not change the group</source>
+        <target>Do not change the group</target>
+      </trans-unit>
+      <trans-unit id="037b23f7a64b35388c3f2972a2b9aab9">
+        <source>Accounts waiting for approval are listed in Customers &gt; Accounts to approve.</source>
+        <target>Accounts waiting for approval are listed in Customers &gt; Accounts to approve.</target>
+      </trans-unit>
+      <trans-unit id="3847da68090aeb4ffaf04d1bb20ae59d">
+        <source>Only company accounts</source>
+        <target>Only company accounts</target>
+      </trans-unit>
+      <trans-unit id="50591f3a7abc78072eb72dfc9a5aff69">
+        <source>Group after approval</source>
+        <target>Group after approval</target>
+      </trans-unit>
+      <trans-unit id="43ff3ac8ad54f98405a9bfc1f5e45852">
+        <source>Added to the customer and set as the default group when the account is approved.</source>
+        <target>Added to the customer and set as the default group when the account is approved.</target>
+      </trans-unit>
+      <trans-unit id="678138a0e647cf96f5bc588798b0e8a0">
+        <source>This account is no longer waiting for approval.</source>
+        <target>This account is no longer waiting for approval.</target>
+      </trans-unit>
+      <trans-unit id="eecc9b2f5ae370df7e041c1563218c21">
+        <source>The account could not be saved.</source>
+        <target>The account could not be saved.</target>
+      </trans-unit>
+      <trans-unit id="8e2d7707a16b33c8501be4e4a164df31">
+        <source>Account approved, the customer has been notified.</source>
+        <target>Account approved, the customer has been notified.</target>
+      </trans-unit>
+      <trans-unit id="456329de8290c3338aea9ca053d7bd67">
+        <source>Request rejected, the account is active as a regular one and the customer has been notified.</source>
+        <target>Request rejected, the account is active as a regular one and the customer has been notified.</target>
+      </trans-unit>
+      <trans-unit id="6205cf9436aee7ccb42779ac5e69bd3f">
+        <source>Registered</source>
+        <target>Registered</target>
+      </trans-unit>
+      <trans-unit id="ee5587084316050e083ea4e34cc578cb">
+        <source>Company accounts waiting for approval</source>
+        <target>Company accounts waiting for approval</target>
+      </trans-unit>
+      <trans-unit id="6f7351657f795bc1357a53142b1184cc">
+        <source>Approve</source>
+        <target>Approve</target>
+      </trans-unit>
+      <trans-unit id="d98ac12774fca5c3cbaffe276840c55f">
+        <source>Reject</source>
+        <target>Reject</target>
+      </trans-unit>
+      <trans-unit id="e0ca96f19fbe743332b3646d9cda25e3">
+        <source>Adds the account type choice with company name and tax number to the registration form and holds only company accounts. Off holds every new account.</source>
+        <target>Adds the account type choice with company name and tax number to the registration form and holds only company accounts. Off holds every new account.</target>
+      </trans-unit>
+      <trans-unit id="4e04a590ebee4f45e699ed0a71701967">
+        <source>Tax number</source>
+        <target>Tax number</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

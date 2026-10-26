@@ -18,20 +18,30 @@ class M4p_CustomerVerify extends Module
 {
     public const CFG_ENABLED = 'M4P_CV_ENABLED';
     public const CFG_ADMIN_EMAIL = 'M4P_CV_ADMIN_EMAIL';
-    public const COOKIE_FLAG = 'm4p_cv_pending';
-
-    /** Seconds the pending notice stays armed, so a theme without the banner hook cannot pin the visitor to the home page. */
-    private const NOTICE_TTL = 300;
+    public const CFG_BUSINESS_ONLY = 'M4P_CV_BUSINESS_ONLY';
+    public const CFG_GROUP = 'M4P_CV_GROUP';
+    public const FIELD_BUSINESS = 'm4p_cv_business';
+    public const FIELD_COMPANY = 'company';
+    public const FIELD_TAX_NUMBER = 'siret';
+    public const ADMIN_CONTROLLER = 'AdminM4pCustomerVerify';
 
     public function __construct()
     {
         $this->name = 'm4p_customerverify';
         $this->tab = 'administration';
-        $this->version = '1.0.0';
+        $this->version = '1.2.0';
         $this->author = 'Modules4Presta';
         $this->need_instance = 0;
         $this->bootstrap = true;
         $this->ps_versions_compliancy = ['min' => '1.7.6.0', 'max' => _PS_VERSION_];
+        $this->tabs = [
+            [
+                'class_name' => self::ADMIN_CONTROLLER,
+                'parent_class_name' => 'AdminParentCustomer',
+                'name' => ['en' => 'Accounts to approve', 'pl' => 'Konta do akceptacji'],
+                'visible' => true,
+            ],
+        ];
 
         parent::__construct();
 
@@ -43,19 +53,23 @@ class M4p_CustomerVerify extends Module
     {
         Configuration::updateValue(self::CFG_ENABLED, 1);
         Configuration::updateValue(self::CFG_ADMIN_EMAIL, '');
+        Configuration::updateValue(self::CFG_BUSINESS_ONLY, 1);
+        Configuration::updateValue(self::CFG_GROUP, 0);
 
         return parent::install()
             && $this->installDb()
             && $this->registerHook('actionCustomerAccountAdd')
             && $this->registerHook('actionObjectCustomerUpdateAfter')
-            && $this->registerHook('actionFrontControllerSetMedia')
-            && $this->registerHook('displayAfterBodyOpeningTag');
+            && $this->registerHook('additionalCustomerFormFields')
+            && $this->registerHook('validateCustomerFormFields');
     }
 
     public function uninstall(): bool
     {
         Configuration::deleteByName(self::CFG_ENABLED);
         Configuration::deleteByName(self::CFG_ADMIN_EMAIL);
+        Configuration::deleteByName(self::CFG_BUSINESS_ONLY);
+        Configuration::deleteByName(self::CFG_GROUP);
 
         return $this->uninstallDb() && parent::uninstall();
     }
@@ -81,9 +95,143 @@ class M4p_CustomerVerify extends Module
         return (bool) Configuration::get(self::CFG_ENABLED);
     }
 
-    /* ---------------------------------------------------------------------
-     * Registration: account deactivation + notifications
-     * ------------------------------------------------------------------- */
+    private function isBusinessOnly(): bool
+    {
+        return (bool) Configuration::get(self::CFG_BUSINESS_ONLY);
+    }
+
+    /**
+     * Adds the account type choice and the company fields to the registration form only; checkout and the
+     * identity page keep their forms. With PS_B2B_ENABLE the core form already has company and siret.
+     *
+     * @return FormField[]
+     */
+    public function hookAdditionalCustomerFormFields(array $params): array
+    {
+        if (!$this->isVerificationEnabled() || !$this->isBusinessOnly()
+            || ($this->context->controller->php_self ?? '') !== 'registration'
+        ) {
+            return [];
+        }
+
+        $fields = [
+            (new FormField())
+                ->setName(self::FIELD_BUSINESS)
+                ->setType('radio-buttons')
+                ->setLabel($this->trans('Account type', [], 'Modules.M4pcustomerverify.Shop'))
+                ->addAvailableValue('0', $this->trans('Private person', [], 'Modules.M4pcustomerverify.Shop'))
+                ->addAvailableValue('1', $this->trans('Company', [], 'Modules.M4pcustomerverify.Shop'))
+                ->setValue(Tools::getValue(self::FIELD_BUSINESS) ? '1' : '0'),
+        ];
+
+        if (!Configuration::get('PS_B2B_ENABLE')) {
+            $fields[] = (new FormField())
+                ->setName(self::FIELD_COMPANY)
+                ->setType('text')
+                ->setMaxLength(255)
+                ->setLabel($this->trans('Company name', [], 'Modules.M4pcustomerverify.Shop'));
+            $fields[] = (new FormField())
+                ->setName(self::FIELD_TAX_NUMBER)
+                ->setType('text')
+                ->setMaxLength(32)
+                ->setLabel($this->trans('NIP or EU VAT number', [], 'Modules.M4pcustomerverify.Shop'));
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Company name and tax number are required only for a company account; a private account drops them.
+     * A Polish NIP is checked by its checksum, an EU VAT number in VIES (an unavailable VIES does not block).
+     *
+     * @return FormField[]
+     */
+    public function hookValidateCustomerFormFields(array $params): array
+    {
+        $fields = [];
+        foreach ($params['fields'] ?? [] as $field) {
+            if ($field instanceof FormField) {
+                $fields[$field->getName()] = $field;
+            }
+        }
+        if (!isset($fields[self::FIELD_COMPANY], $fields[self::FIELD_TAX_NUMBER])) {
+            return $params['fields'] ?? [];
+        }
+
+        $company = $fields[self::FIELD_COMPANY];
+        $taxNumber = $fields[self::FIELD_TAX_NUMBER];
+        if (!isset($fields[self::FIELD_BUSINESS]) || !$fields[self::FIELD_BUSINESS]->getValue()) {
+            $company->setValue('');
+            $taxNumber->setValue('');
+
+            return $params['fields'];
+        }
+
+        $name = trim((string) $company->getValue());
+        $company->setValue($name);
+        if ($name === '') {
+            $company->addError($this->trans('Enter the company name.', [], 'Modules.M4pcustomerverify.Shop'));
+        } elseif (!Validate::isGenericName($name)) {
+            $company->addError($this->trans('The company name contains characters that are not allowed.', [], 'Modules.M4pcustomerverify.Shop'));
+        }
+
+        $number = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', (string) $taxNumber->getValue()));
+        $error = $this->taxNumberError($number);
+        if ($error !== '') {
+            $taxNumber->addError($error);
+        } else {
+            $taxNumber->setValue(preg_match('/^PL(\d{10})$/', $number, $match) ? $match[1] : $number);
+        }
+
+        return $params['fields'];
+    }
+
+    /**
+     * @return string error for the customer, '' when the number is accepted
+     */
+    private function taxNumberError(string $number): string
+    {
+        if ($number === '') {
+            return $this->trans('Enter the NIP or the EU VAT number of the company.', [], 'Modules.M4pcustomerverify.Shop');
+        }
+        if (preg_match('/^(PL)?\d+$/', $number)) {
+            return self::isValidNip((string) preg_replace('/^PL/', '', $number))
+                ? ''
+                : $this->trans('This NIP is not valid. Check the digits.', [], 'Modules.M4pcustomerverify.Shop');
+        }
+        if (!preg_match('/^([A-Z]{2})[A-Z0-9]{2,13}$/', $number, $match)) {
+            return $this->trans('Enter a 10-digit NIP or an EU VAT number with the country code, e.g. DE123456789.', [], 'Modules.M4pcustomerverify.Shop');
+        }
+
+        $viesCheck = _PS_MODULE_DIR_ . 'm4p_viesintegration/classes/M4pViesCheck.php';
+        if (!Module::isEnabled('m4p_viesintegration') || !is_file($viesCheck)) {
+            return '';
+        }
+        require_once $viesCheck;
+        if (!in_array($match[1], M4pViesCheck::EU_PREFIXES, true)) {
+            return '';
+        }
+
+        return M4pViesCheck::check($number) === M4pViesCheck::INVALID
+            ? $this->trans('VIES does not confirm this EU VAT number. Check it and try again.', [], 'Modules.M4pcustomerverify.Shop')
+            : '';
+    }
+
+    /**
+     * Polish NIP: ten digits, the last one is the weighted checksum of the first nine.
+     */
+    public static function isValidNip(string $nip): bool
+    {
+        if (!preg_match('/^\d{10}$/', $nip)) {
+            return false;
+        }
+        $sum = 0;
+        foreach ([6, 5, 7, 2, 3, 4, 5, 6, 7] as $i => $weight) {
+            $sum += $weight * (int) $nip[$i];
+        }
+
+        return $sum % 11 === (int) $nip[9];
+    }
 
     public function hookActionCustomerAccountAdd(array $params): void
     {
@@ -97,122 +245,117 @@ class M4p_CustomerVerify extends Module
             return;
         }
 
-        // 1) Account inactive until approved.
-        $customer->active = 0;
+        $isBusiness = ($this->context->controller->php_self ?? '') === 'registration'
+            && (bool) Tools::getValue(self::FIELD_BUSINESS);
+        if ($this->isBusinessOnly() && !$isBusiness) {
+            return;
+        }
+
+        $customer->active = false;
         $customer->update();
 
-        // 2) Mark as pending verification.
         Db::getInstance()->execute(
             'INSERT IGNORE INTO `' . _DB_PREFIX_ . 'm4p_pending_verification` (`id_customer`, `date_add`)
             VALUES (' . (int) $customer->id . ', NOW())'
         );
 
-        // 3) Notify the admin.
         $this->notifyAdmin($customer);
 
-        // 4) PrestaShop auto-logged the customer in - log them back out.
         if (Validate::isLoadedObject($this->context->customer) && (int) $this->context->customer->id === (int) $customer->id) {
             $this->context->customer->logout();
         }
 
-        // 5) Flag to show the message after redirecting to the home page.
-        $this->context->cookie->{self::COOKIE_FLAG} = time();
-        $this->context->cookie->write();
+        // The home page is publicly cached by LiteSpeed, so the notice goes to the uncached login page.
+        $controller = $this->context->controller;
+        if ($controller instanceof FrontController && !$controller->ajax) {
+            $controller->info[] = $this->trans(
+                'Your account has been registered and is waiting for an administrator to approve it. You will get an e-mail with a link to sign in once it is active.',
+                [],
+                'Modules.M4pcustomerverify.Shop'
+            );
+            $controller->redirectWithNotifications($this->context->link->getPageLink('authentication', true));
+        }
     }
 
-    /* ---------------------------------------------------------------------
-     * Admin activation => email to the customer
-     * ------------------------------------------------------------------- */
-
+    /**
+     * Activating a pending account (queue or the "Enable" switch in Customers) assigns the configured group and mails the customer.
+     */
     public function hookActionObjectCustomerUpdateAfter(array $params): void
     {
-        if (!$this->isVerificationEnabled() || empty($params['object'])) {
+        if (empty($params['object'])) {
             return;
         }
 
         /** @var Customer $customer */
         $customer = $params['object'];
-        if (!Validate::isLoadedObject($customer) || !(int) $customer->active) {
+        if (!Validate::isLoadedObject($customer) || !(int) $customer->active || !$this->isPending((int) $customer->id)) {
             return;
         }
 
-        // Only if the account was marked as pending (i.e. it was just activated).
-        $isPending = (int) Db::getInstance()->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'm4p_pending_verification` WHERE `id_customer` = ' . (int) $customer->id
-        );
-        if (!$isPending) {
-            return;
+        $this->removePending((int) $customer->id);
+
+        $idGroup = (int) Configuration::get(self::CFG_GROUP);
+        if ($idGroup && Validate::isLoadedObject(new Group($idGroup))) {
+            $customer->addGroups([$idGroup]);
+            // A direct update keeps Customer::update() from re-syncing groups from the admin form.
+            Db::getInstance()->update('customer', ['id_default_group' => $idGroup], 'id_customer = ' . (int) $customer->id);
+            $customer->id_default_group = $idGroup;
         }
 
-        Db::getInstance()->execute(
-            'DELETE FROM `' . _DB_PREFIX_ . 'm4p_pending_verification` WHERE `id_customer` = ' . (int) $customer->id
-        );
-
-        $this->notifyCustomerActivated($customer);
+        $this->sendCustomerMail($customer, 'account_activated', $this->trans('Your account has been activated', [], 'Modules.M4pcustomerverify.Admin'));
     }
 
-    /* ---------------------------------------------------------------------
-     * Front: redirect to the home page + message banner
-     * ------------------------------------------------------------------- */
-
-    public function hookActionFrontControllerSetMedia(): void
+    public function isPending(int $idCustomer): bool
     {
-        if (!$this->noticeIsPending()) {
-            return;
-        }
-
-        if (($this->context->controller->php_self ?? '') !== 'index') {
-            Tools::redirect($this->context->link->getPageLink('index'));
-        }
-
-        $this->context->controller->registerStylesheet(
-            'm4p-customerverify',
-            'modules/' . $this->name . '/views/css/front.css',
-            ['media' => 'all', 'priority' => 150]
-        );
-        $this->context->controller->registerJavascript(
-            'm4p-customerverify',
-            'modules/' . $this->name . '/views/js/front.js',
-            ['position' => 'bottom', 'priority' => 150]
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'm4p_pending_verification` WHERE `id_customer` = ' . $idCustomer
         );
     }
 
-    public function hookDisplayAfterBodyOpeningTag(array $params): string
+    private function removePending(int $idCustomer): void
     {
-        if (!$this->noticeIsPending() || ($this->context->controller->php_self ?? '') !== 'index') {
-            return '';
-        }
-
-        $this->clearNotice();
-
-        return $this->display(__FILE__, 'views/templates/hook/pending_banner.tpl');
+        Db::getInstance()->delete('m4p_pending_verification', '`id_customer` = ' . $idCustomer);
     }
 
-    private function noticeIsPending(): bool
+    /**
+     * Approves a pending account; the group and the e-mail follow from hookActionObjectCustomerUpdateAfter.
+     */
+    public function approve(Customer $customer): bool
     {
-        $flag = (int) ($this->context->cookie->{self::COOKIE_FLAG} ?? 0);
-        if (!$flag) {
+        $customer->active = true;
+
+        return (bool) $customer->update();
+    }
+
+    /**
+     * Rejects the company request: the account is activated as a regular retail account and the customer is told by e-mail.
+     */
+    public function reject(Customer $customer): bool
+    {
+        $this->removePending((int) $customer->id);
+        $customer->active = true;
+        if (!$customer->update()) {
             return false;
         }
 
-        if (time() - $flag > self::NOTICE_TTL) {
-            $this->clearNotice();
-
-            return false;
-        }
+        $this->sendCustomerMail($customer, 'account_rejected', $this->trans('Your company account request', [], 'Modules.M4pcustomerverify.Admin'));
 
         return true;
     }
 
-    private function clearNotice(): void
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getPendingAccounts(): array
     {
-        unset($this->context->cookie->{self::COOKIE_FLAG});
-        $this->context->cookie->write();
+        return Db::getInstance()->executeS(
+            'SELECT c.`id_customer`, c.`firstname`, c.`lastname`, c.`email`, c.`company`, c.`siret`, p.`date_add`
+            FROM `' . _DB_PREFIX_ . 'm4p_pending_verification` p
+            INNER JOIN `' . _DB_PREFIX_ . 'customer` c ON c.`id_customer` = p.`id_customer`
+            WHERE c.`deleted` = 0
+            ORDER BY p.`date_add` ASC'
+        ) ?: [];
     }
-
-    /* ---------------------------------------------------------------------
-     * Emails
-     * ------------------------------------------------------------------- */
 
     private function notifyAdmin(Customer $customer): void
     {
@@ -235,6 +378,8 @@ class M4p_CustomerVerify extends Module
                 '{firstname}' => $customer->firstname,
                 '{lastname}' => $customer->lastname,
                 '{email}' => $customer->email,
+                '{company}' => $customer->company ?: '-',
+                '{tax_number}' => $customer->siret ?: '-',
                 '{id_customer}' => (int) $customer->id,
                 '{shop_name}' => $shopName,
             ],
@@ -250,7 +395,7 @@ class M4p_CustomerVerify extends Module
         );
     }
 
-    private function notifyCustomerActivated(Customer $customer): void
+    private function sendCustomerMail(Customer $customer, string $template, string $subject): void
     {
         if (!Validate::isEmail($customer->email)) {
             return;
@@ -258,17 +403,16 @@ class M4p_CustomerVerify extends Module
 
         $idLang = (int) ($customer->id_lang ?: Configuration::get('PS_LANG_DEFAULT'));
         $shopName = (string) Configuration::get('PS_SHOP_NAME');
-        $loginUrl = $this->context->link->getPageLink('authentication', true);
 
         Mail::Send(
             $idLang,
-            'account_activated',
-            $this->trans('Your account has been activated', [], 'Modules.M4pcustomerverify.Admin') . ' - ' . $shopName,
+            $template,
+            $subject . ' - ' . $shopName,
             [
                 '{firstname}' => $customer->firstname,
                 '{lastname}' => $customer->lastname,
                 '{email}' => $customer->email,
-                '{login_url}' => $loginUrl,
+                '{login_url}' => $this->context->link->getPageLink('authentication', true),
                 '{shop_name}' => $shopName,
             ],
             $customer->email,
@@ -283,42 +427,72 @@ class M4p_CustomerVerify extends Module
         );
     }
 
-    /* ---------------------------------------------------------------------
-     * Konfiguracja
-     * ------------------------------------------------------------------- */
-
     public function getContent(): string
     {
         $output = '';
 
         if (Tools::isSubmit('submitM4pCv')) {
-            Configuration::updateValue(self::CFG_ENABLED, (int) (bool) Tools::getValue(self::CFG_ENABLED));
             $email = trim((string) Tools::getValue(self::CFG_ADMIN_EMAIL));
             if ($email !== '' && !Validate::isEmail($email)) {
                 $output .= $this->displayError($this->trans('That e-mail address is not valid, so nothing was saved.', [], 'Modules.M4pcustomerverify.Admin'));
             } else {
+                Configuration::updateValue(self::CFG_ENABLED, (int) (bool) Tools::getValue(self::CFG_ENABLED));
+                Configuration::updateValue(self::CFG_BUSINESS_ONLY, (int) (bool) Tools::getValue(self::CFG_BUSINESS_ONLY));
+                Configuration::updateValue(self::CFG_GROUP, (int) Tools::getValue(self::CFG_GROUP));
                 Configuration::updateValue(self::CFG_ADMIN_EMAIL, $email);
                 $output .= $this->displayConfirmation($this->trans('Settings updated.', [], 'Modules.M4pcustomerverify.Admin'));
             }
         }
 
-        // Address notifications actually go to (falls back to the shop email).
         $adminEmail = (string) Configuration::get(self::CFG_ADMIN_EMAIL);
         $effective = Validate::isEmail($adminEmail) ? $adminEmail : (string) Configuration::get('PS_SHOP_EMAIL');
+        $switchValues = [
+            ['id' => 'on', 'value' => 1, 'label' => $this->trans('Yes', [], 'Modules.M4pcustomerverify.Admin')],
+            ['id' => 'off', 'value' => 0, 'label' => $this->trans('No', [], 'Modules.M4pcustomerverify.Admin')],
+        ];
+        $groups = array_merge(
+            [['id_group' => 0, 'name' => $this->trans('Do not change the group', [], 'Modules.M4pcustomerverify.Admin')]],
+            Group::getGroups((int) $this->context->language->id)
+        );
 
         $fields_form = [
             'form' => [
                 'legend' => ['title' => $this->trans('Verification settings', [], 'Modules.M4pcustomerverify.Admin'), 'icon' => 'icon-cogs'],
+                'description' => $this->trans(
+                    'Accounts waiting for approval are listed in Customers > Accounts to approve.',
+                    [],
+                    'Modules.M4pcustomerverify.Admin'
+                ),
                 'input' => [
                     [
                         'type' => 'switch',
                         'label' => $this->trans('Hold new accounts for approval', [], 'Modules.M4pcustomerverify.Admin'),
                         'name' => self::CFG_ENABLED,
                         'is_bool' => true,
-                        'values' => [
-                            ['id' => 'on', 'value' => 1, 'label' => $this->trans('Yes', [], 'Modules.M4pcustomerverify.Admin')],
-                            ['id' => 'off', 'value' => 0, 'label' => $this->trans('No', [], 'Modules.M4pcustomerverify.Admin')],
-                        ],
+                        'values' => $switchValues,
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->trans('Only company accounts', [], 'Modules.M4pcustomerverify.Admin'),
+                        'name' => self::CFG_BUSINESS_ONLY,
+                        'is_bool' => true,
+                        'values' => $switchValues,
+                        'desc' => $this->trans(
+                            'Adds the account type choice with company name and tax number to the registration form and holds only company accounts. Off holds every new account.',
+                            [],
+                            'Modules.M4pcustomerverify.Admin'
+                        ),
+                    ],
+                    [
+                        'type' => 'select',
+                        'label' => $this->trans('Group after approval', [], 'Modules.M4pcustomerverify.Admin'),
+                        'name' => self::CFG_GROUP,
+                        'options' => ['query' => $groups, 'id' => 'id_group', 'name' => 'name'],
+                        'desc' => $this->trans(
+                            'Added to the customer and set as the default group when the account is approved.',
+                            [],
+                            'Modules.M4pcustomerverify.Admin'
+                        ),
                     ],
                     [
                         'type' => 'text',
@@ -343,6 +517,8 @@ class M4p_CustomerVerify extends Module
         $helper->submit_action = 'submitM4pCv';
         $helper->fields_value = [
             self::CFG_ENABLED => (int) Configuration::get(self::CFG_ENABLED),
+            self::CFG_BUSINESS_ONLY => (int) Configuration::get(self::CFG_BUSINESS_ONLY),
+            self::CFG_GROUP => (int) Configuration::get(self::CFG_GROUP),
             self::CFG_ADMIN_EMAIL => (string) Configuration::get(self::CFG_ADMIN_EMAIL),
         ];
 

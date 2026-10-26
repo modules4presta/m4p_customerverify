@@ -2,17 +2,53 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file original="module" source-language="en-US" target-language="en-US" datatype="plaintext">
     <body>
-      <trans-unit id="7526beedb7628c1687847100347be867">
-        <source>Your account is waiting for approval</source>
-        <target>Your account is waiting for approval</target>
-      </trans-unit>
       <trans-unit id="122a7853e01dd6ab7148672c54ba1949">
         <source>Your account has been registered and is waiting for an administrator to approve it. You will get an e-mail with a link to sign in once it is active.</source>
         <target>Your account has been registered and is waiting for an administrator to approve it. You will get an e-mail with a link to sign in once it is active.</target>
       </trans-unit>
-      <trans-unit id="78e981599281c16fe016b55b136edf5f">
-        <source>Got it</source>
-        <target>Got it</target>
+      <trans-unit id="51bdfc4588e299668d9478a2293e7eff">
+        <source>Account type</source>
+        <target>Account type</target>
+      </trans-unit>
+      <trans-unit id="74680dc2a8bec47ca390bc6643874054">
+        <source>Private person</source>
+        <target>Private person</target>
+      </trans-unit>
+      <trans-unit id="1c76cbfe21c6f44c1d1e59d54f3e4420">
+        <source>Company</source>
+        <target>Company</target>
+      </trans-unit>
+      <trans-unit id="c281f92b77ba329f692077d23636f5c9">
+        <source>Company name</source>
+        <target>Company name</target>
+      </trans-unit>
+      <trans-unit id="3e82fd39c2c9eff3573a71a2e229cb3b">
+        <source>NIP or EU VAT number</source>
+        <target>NIP or EU VAT number</target>
+      </trans-unit>
+      <trans-unit id="6e133729aa239694b0be48cc43cdae02">
+        <source>Enter the company name.</source>
+        <target>Enter the company name.</target>
+      </trans-unit>
+      <trans-unit id="b26441fe1e2cfd6081b10f10d75ce95e">
+        <source>The company name contains characters that are not allowed.</source>
+        <target>The company name contains characters that are not allowed.</target>
+      </trans-unit>
+      <trans-unit id="e51574232eecb6c530e902a004b0321b">
+        <source>Enter the NIP or the EU VAT number of the company.</source>
+        <target>Enter the NIP or the EU VAT number of the company.</target>
+      </trans-unit>
+      <trans-unit id="f4e73b93a19b73a061348587e2028989">
+        <source>This NIP is not valid. Check the digits.</source>
+        <target>This NIP is not valid. Check the digits.</target>
+      </trans-unit>
+      <trans-unit id="74de4072128a4600f4d97f2a3f91e6bb">
+        <source>Enter a 10-digit NIP or an EU VAT number with the country code, e.g. DE123456789.</source>
+        <target>Enter a 10-digit NIP or an EU VAT number with the country code, e.g. DE123456789.</target>
+      </trans-unit>
+      <trans-unit id="c9b71de3c9cda19aa8c4159389120cc2">
+        <source>VIES does not confirm this EU VAT number. Check it and try again.</source>
+        <target>VIES does not confirm this EU VAT number. Check it and try again.</target>
       </trans-unit>
     </body>
   </file>
