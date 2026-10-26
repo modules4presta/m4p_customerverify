@@ -1,9 +1,11 @@
 A new account is waiting for approval - {shop_name}
 
-A new customer account has been registered and is waiting for approval:
+A new company account has been registered and is waiting for approval:
 
 Name: {firstname} {lastname}
 E-mail: {email}
+Company: {company}
+Tax number: {tax_number}
 Customer ID: {id_customer}
 
-To approve it, open Customers in the back office, find this account and set it to active.
+Approve or reject it in the back office: Customers → Accounts to approve. The customer then receives an e-mail.

@@ -1,0 +1,10 @@
+Wniosek o konto firmowe - {shop_name}
+
+Witaj {firstname} {lastname},
+
+Nie możemy zaakceptować wniosku o konto firmowe w sklepie {shop_name}.
+Twoje konto jest aktywne jako zwykłe konto klienta – możesz się zalogować i robić zakupy w cenach standardowych: {login_url}
+Jeśli masz pytania, odpowiedz na tę wiadomość.
+
+Pozdrawiamy,
+{shop_name}

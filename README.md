@@ -18,8 +18,8 @@ entirely. An account created in ten seconds by anyone with an e-mail address def
 
 ## What the module does
 
-When someone registers, the module deactivates the account, logs the visitor back out and shows a
-message explaining that the account is waiting for approval. Your shop gets an e-mail with the
+When someone registers, the module deactivates the account, logs the visitor back out and sends them
+to the sign-in page with a message explaining that the account is waiting for approval. Your shop gets an e-mail with the
 details. The moment an administrator activates the account in **Customers**, the customer receives
 an e-mail with a link to sign in.
 
@@ -31,10 +31,21 @@ an e-mail with a link to sign in.
 - **Own table for pending accounts** — nothing is added to PrestaShop's `customer` table
 - **One switch** — turn verification off and registration goes back to normal
 
+### Company accounts only
+
+With **Only company accounts** on, the registration form gets an account type choice (private person
+or company). A company account requires the company name and a tax number, saved in the customer's
+`company` and `siret`: a Polish NIP is checked by its checksum, an EU VAT number in VIES when
+`m4p_viesintegration` is enabled (an unavailable VIES does not block registration). Only company
+accounts are held. Pending accounts are listed in **Customers → Accounts to approve**:
+**Approve** activates the account, adds the configured group and sets it as the default one;
+**Reject** activates it as a regular account. The customer gets an e-mail either way. Switching
+**Enable** on in **Customers** still counts as approval.
+
 ### What it does not do
 
-The module does not check VAT numbers, does not build an approval queue with its own screen and does
-not reject anyone by itself. It stops the account and tells you; the decision stays with a person.
+The module does not reject anyone by itself. It stops the account and
+tells you; the decision stays with a person.
 
 ## Compatibility
 
@@ -43,11 +54,12 @@ not reject anyone by itself. It stops the account and tells you; the decision st
 | PrestaShop | 1.7.6 – 9.x |
 | PHP | 7.2.5+ |
 | Requirements | a working shop e-mail configuration |
+| Optional | `m4p_viesintegration` for VIES checks of EU VAT numbers; without it only the Polish NIP checksum is verified |
 | Multistore | Settings and pending accounts are shared across shops |
-| Themes | The message needs a theme that renders `displayAfterBodyOpeningTag` (all standard themes do) |
+| Themes | The message uses the theme's standard notifications on the sign-in page |
 
-The module performs no core overrides. It creates one table, `m4p_pending_verification`, and drops
-it on uninstall.
+The module performs no core overrides. It creates one table, `m4p_pending_verification`, and one
+back-office tab, and removes both on uninstall.
 
 ## Installation
 
@@ -62,6 +74,8 @@ it on uninstall.
 | Setting | Description |
 |---|---|
 | **Hold new accounts for approval** | Turns verification on. Off means registration works as usual. |
+| **Only company accounts** | Adds the account type choice with company name and tax number, and holds only company accounts. |
+| **Group after approval** | Added to the customer and set as the default group on approval. |
 | **Notification e-mail** | Where the notice about a new account is sent. Empty means the shop e-mail. |
 
 ## Frequently asked questions

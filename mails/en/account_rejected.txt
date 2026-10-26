@@ -1,0 +1,10 @@
+Your company account request - {shop_name}
+
+Hello {firstname} {lastname},
+
+We cannot approve the company account request at {shop_name}.
+Your account is active as a regular customer account – you can sign in and shop at standard prices: {login_url}
+If you have any questions, reply to this e-mail.
+
+Kind regards,
+{shop_name}
