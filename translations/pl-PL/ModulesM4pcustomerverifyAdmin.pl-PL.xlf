@@ -10,13 +10,25 @@
         <source>Keeps new accounts inactive until an administrator approves them, and tells both sides by e-mail.</source>
         <target>Nowe konta pozostają nieaktywne do czasu zatwierdzenia przez administratora, a obie strony dostają e-mail.</target>
       </trans-unit>
-      <trans-unit id="9266f561b8e6bda87fa6063f26abd673">
-        <source>A new account is waiting for approval</source>
-        <target>Nowe konto czeka na zatwierdzenie</target>
-      </trans-unit>
       <trans-unit id="c5093f03229416cc06a625654429d7f2">
         <source>Your account has been activated</source>
         <target>Twoje konto zostało aktywowane</target>
+      </trans-unit>
+      <trans-unit id="bf6c8f3ceab07945d02448a10d9fa655">
+        <source>The price list of your account has been updated</source>
+        <target>Cennik Twojego konta został zaktualizowany</target>
+      </trans-unit>
+      <trans-unit id="500aca84acd6eaf40a174050fc2fe71c">
+        <source>Your company account has been approved</source>
+        <target>Twoje konto firmowe zostało zaakceptowane</target>
+      </trans-unit>
+      <trans-unit id="2a93414090d6a5f20716df30e109537b">
+        <source>Your company account request</source>
+        <target>Wniosek o konto firmowe</target>
+      </trans-unit>
+      <trans-unit id="9266f561b8e6bda87fa6063f26abd673">
+        <source>A new account is waiting for approval</source>
+        <target>Nowe konto czeka na zatwierdzenie</target>
       </trans-unit>
       <trans-unit id="d11f83faa9a91703b28a71c4539f82eb">
         <source>That e-mail address is not valid, so nothing was saved.</source>
@@ -26,14 +38,6 @@
         <source>Settings updated.</source>
         <target>Ustawienia zapisane.</target>
       </trans-unit>
-      <trans-unit id="309f15f9a3d47137d67a817e7e6570c1">
-        <source>Verification settings</source>
-        <target>Ustawienia weryfikacji</target>
-      </trans-unit>
-      <trans-unit id="56d84ed8483c622600ccc72f3d20fecc">
-        <source>Hold new accounts for approval</source>
-        <target>Wstrzymuj nowe konta do zatwierdzenia</target>
-      </trans-unit>
       <trans-unit id="93cba07454f06a4a960172bbd6e2a435">
         <source>Yes</source>
         <target>Tak</target>
@@ -41,6 +45,54 @@
       <trans-unit id="bafd7322c6e97d25b6299b5d6fe8920b">
         <source>No</source>
         <target>Nie</target>
+      </trans-unit>
+      <trans-unit id="ae451ab5d29061321061b7cef0c46b06">
+        <source>Do not change the group</source>
+        <target>Nie zmieniaj grupy</target>
+      </trans-unit>
+      <trans-unit id="309f15f9a3d47137d67a817e7e6570c1">
+        <source>Verification settings</source>
+        <target>Ustawienia weryfikacji</target>
+      </trans-unit>
+      <trans-unit id="037b23f7a64b35388c3f2972a2b9aab9">
+        <source>Accounts waiting for approval are listed in Customers &gt; Accounts to approve.</source>
+        <target>Konta czekające na zatwierdzenie są w zakładce Klienci &gt; Konta do akceptacji.</target>
+      </trans-unit>
+      <trans-unit id="0a2fede627a6350b4da89ec7bb7635cc">
+        <source>Company account verification</source>
+        <target>Weryfikacja kont firmowych</target>
+      </trans-unit>
+      <trans-unit id="3847da68090aeb4ffaf04d1bb20ae59d">
+        <source>Only company accounts</source>
+        <target>Tylko konta firmowe</target>
+      </trans-unit>
+      <trans-unit id="e0ca96f19fbe743332b3646d9cda25e3">
+        <source>Adds the account type choice with company name and tax number to the registration form and holds only company accounts. Off holds every new account.</source>
+        <target>Dodaje do formularza rejestracji wybór rodzaju konta z nazwą firmy i numerem NIP oraz wstrzymuje tylko konta firmowe. Wyłączone wstrzymuje każde nowe konto.</target>
+      </trans-unit>
+      <trans-unit id="8976e90c4f488a7383a914baa4c6e03e">
+        <source>Account active before approval</source>
+        <target>Konto aktywne przed akceptacją</target>
+      </trans-unit>
+      <trans-unit id="e13b54ca17b93d03d8720fdbde4db6c5">
+        <source>On: the customer can sign in and shop right after registering, with the default customer group. Approval only changes the group. Off: the account stays inactive until approved.</source>
+        <target>Włączone: klient może się zalogować i robić zakupy od razu po rejestracji, z domyślną grupą klientów. Akceptacja zmienia tylko grupę. Wyłączone: konto jest nieaktywne do czasu akceptacji.</target>
+      </trans-unit>
+      <trans-unit id="50591f3a7abc78072eb72dfc9a5aff69">
+        <source>Group after approval</source>
+        <target>Grupa po zatwierdzeniu</target>
+      </trans-unit>
+      <trans-unit id="43ff3ac8ad54f98405a9bfc1f5e45852">
+        <source>Added to the customer and set as the default group when the account is approved.</source>
+        <target>Dodawana klientowi i ustawiana jako domyślna, gdy konto zostanie zatwierdzone.</target>
+      </trans-unit>
+      <trans-unit id="7838538deb0d6f7ea07e81e0ecc08386">
+        <source>Only the group after approval</source>
+        <target>Tylko grupa po akceptacji</target>
+      </trans-unit>
+      <trans-unit id="1d2d72672c48e5b4d4d6cf44518ac9a5">
+        <source>On: the approved account keeps only this group, so its prices and any full-page cache follow it. Off: the group is added next to the ones the account already has.</source>
+        <target>Włączone: zaakceptowane konto ma tylko tę grupę, więc ceny i pamięć podręczna stron odpowiadają tej grupie. Wyłączone: grupa jest dodawana obok grup, które konto już ma.</target>
       </trans-unit>
       <trans-unit id="e480686f42911546de1f314c272014e8">
         <source>Notification e-mail</source>
@@ -53,30 +105,6 @@
       <trans-unit id="c9cc8cce247e49bae79f15173ce97354">
         <source>Save</source>
         <target>Zapisz</target>
-      </trans-unit>
-      <trans-unit id="2a93414090d6a5f20716df30e109537b">
-        <source>Your company account request</source>
-        <target>Wniosek o konto firmowe</target>
-      </trans-unit>
-      <trans-unit id="ae451ab5d29061321061b7cef0c46b06">
-        <source>Do not change the group</source>
-        <target>Nie zmieniaj grupy</target>
-      </trans-unit>
-      <trans-unit id="037b23f7a64b35388c3f2972a2b9aab9">
-        <source>Accounts waiting for approval are listed in Customers &gt; Accounts to approve.</source>
-        <target>Konta czekające na zatwierdzenie są w zakładce Klienci &gt; Konta do akceptacji.</target>
-      </trans-unit>
-      <trans-unit id="3847da68090aeb4ffaf04d1bb20ae59d">
-        <source>Only company accounts</source>
-        <target>Tylko konta firmowe</target>
-      </trans-unit>
-      <trans-unit id="50591f3a7abc78072eb72dfc9a5aff69">
-        <source>Group after approval</source>
-        <target>Grupa po zatwierdzeniu</target>
-      </trans-unit>
-      <trans-unit id="43ff3ac8ad54f98405a9bfc1f5e45852">
-        <source>Added to the customer and set as the default group when the account is approved.</source>
-        <target>Dodawana klientowi i ustawiana jako domyślna, gdy konto zostanie zatwierdzone.</target>
       </trans-unit>
       <trans-unit id="678138a0e647cf96f5bc588798b0e8a0">
         <source>This account is no longer waiting for approval.</source>
@@ -94,6 +122,10 @@
         <source>Request rejected, the account is active as a regular one and the customer has been notified.</source>
         <target>Wniosek odrzucony, konto jest aktywne jako zwykłe, klient dostał e-mail.</target>
       </trans-unit>
+      <trans-unit id="4e04a590ebee4f45e699ed0a71701967">
+        <source>Tax number</source>
+        <target>NIP / VAT UE</target>
+      </trans-unit>
       <trans-unit id="6205cf9436aee7ccb42779ac5e69bd3f">
         <source>Registered</source>
         <target>Data rejestracji</target>
@@ -109,14 +141,6 @@
       <trans-unit id="d98ac12774fca5c3cbaffe276840c55f">
         <source>Reject</source>
         <target>Odrzuć</target>
-      </trans-unit>
-      <trans-unit id="e0ca96f19fbe743332b3646d9cda25e3">
-        <source>Adds the account type choice with company name and tax number to the registration form and holds only company accounts. Off holds every new account.</source>
-        <target>Dodaje do formularza rejestracji wybór rodzaju konta z nazwą firmy i numerem NIP oraz wstrzymuje tylko konta firmowe. Wyłączone wstrzymuje każde nowe konto.</target>
-      </trans-unit>
-      <trans-unit id="4e04a590ebee4f45e699ed0a71701967">
-        <source>Tax number</source>
-        <target>NIP / VAT UE</target>
       </trans-unit>
     </body>
   </file>

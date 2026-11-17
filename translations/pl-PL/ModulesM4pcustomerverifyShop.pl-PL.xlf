@@ -2,10 +2,6 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file original="module" source-language="en-US" target-language="pl-PL" datatype="plaintext">
     <body>
-      <trans-unit id="122a7853e01dd6ab7148672c54ba1949">
-        <source>Your account has been registered and is waiting for an administrator to approve it. You will get an e-mail with a link to sign in once it is active.</source>
-        <target>Twoje konto zostało zarejestrowane i czeka na zatwierdzenie przez administratora. Gdy konto będzie aktywne, dostaniesz e-mail z linkiem do logowania.</target>
-      </trans-unit>
       <trans-unit id="51bdfc4588e299668d9478a2293e7eff">
         <source>Account type</source>
         <target>Rodzaj konta</target>
@@ -13,6 +9,10 @@
       <trans-unit id="74680dc2a8bec47ca390bc6643874054">
         <source>Private person</source>
         <target>Osoba prywatna</target>
+      </trans-unit>
+      <trans-unit id="f5e7296ab5f74d40e583cd61c676ac28">
+        <source>Company (regular prices until the account is approved)</source>
+        <target>Firma (ceny standardowe do czasu akceptacji konta)</target>
       </trans-unit>
       <trans-unit id="1c76cbfe21c6f44c1d1e59d54f3e4420">
         <source>Company</source>
@@ -49,6 +49,18 @@
       <trans-unit id="c9b71de3c9cda19aa8c4159389120cc2">
         <source>VIES does not confirm this EU VAT number. Check it and try again.</source>
         <target>VIES nie potwierdza tego numeru VAT UE. Sprawdź go i spróbuj ponownie.</target>
+      </trans-unit>
+      <trans-unit id="122a7853e01dd6ab7148672c54ba1949">
+        <source>Your account has been registered and is waiting for an administrator to approve it. You will get an e-mail with a link to sign in once it is active.</source>
+        <target>Twoje konto zostało zarejestrowane i czeka na zatwierdzenie przez administratora. Gdy konto będzie aktywne, dostaniesz e-mail z linkiem do logowania.</target>
+      </trans-unit>
+      <trans-unit id="35a55f9647ef64f344591ea95e5d77db">
+        <source>Your account is active. We have received your company account request – once it is approved, you will get an e-mail and see company prices.</source>
+        <target>Konto jest aktywne. Wniosek o konto firmowe został przyjęty – po akceptacji dostaniesz e-mail i zobaczysz ceny dla firm.</target>
+      </trans-unit>
+      <trans-unit id="1d5bc25ae7f63546a5d7ef44975d52bb">
+        <source>Your company account has been approved and its price list updated.</source>
+        <target>Twoje konto firmowe zostało zaakceptowane, a jego cennik zaktualizowany.</target>
       </trans-unit>
     </body>
   </file>

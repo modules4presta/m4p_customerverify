@@ -5,6 +5,34 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-17
+
+### Added
+
+- "Account active before approval" (off by default and after the upgrade): a company account can sign in
+  and shop right after registering, with the default customer group, and stays in the approval queue.
+  The shop gets the usual notice e-mail. After registering on the registration page the customer stays
+  signed in and goes to the home page. Approve assigns the group and sends the "price list updated" e-mail
+  (or "company account approved" when the group stays the same); Reject keeps the account as a regular
+  one. The company option on the registration form says that regular prices apply until approval.
+- One-time notices at the top of the home page content for a signed-in customer: after registering a
+  company account with "Account active before approval" on, and after approval assigns a group. The page
+  stays cacheable: a small script loads the notices from an uncached module controller, and each notice is
+  removed once shown. Notices are kept in the `m4p_customerverify_notice` table.
+- "Price list updated" e-mail, sent when approval assigns a group to an account that is already active.
+- "Only the group after approval" (on by default and after the upgrade): an approved account keeps only
+  the group set for approval, so prices and a full-page cache keyed on the customer's group follow that
+  group. Off adds the group next to the existing ones.
+- A group picker in each row of the approval queue, preselected with the group from the settings; any
+  group except visitor and guest can be chosen, or "Do not change the group".
+
+### Changed
+
+- The main switch is called "Company account verification".
+- Approve and Reject in the queue are form buttons (POST).
+- Only switching a pending account from inactive to active in Customers counts as approval; other edits
+  of a pending account leave it in the queue.
+
 ## [1.2.0] - 2026-10-21
 
 ### Added
@@ -52,4 +80,4 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - English mail templates alongside the Polish ones.
 - The pending notice expires after five minutes, so it does not depend on the theme rendering
   `displayAfterBodyOpeningTag`.
-- The modal styles and script are registered as assets instead of being inlined in the template.
+- The modal styles and script are registered as assets.

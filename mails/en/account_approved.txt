@@ -1,0 +1,9 @@
+Your company account has been approved - {shop_name}
+
+Hello {firstname} {lastname},
+
+Your account at {shop_name} has been approved as a company account.
+Sign in to see your company prices: {login_url}
+
+Kind regards,
+{shop_name}

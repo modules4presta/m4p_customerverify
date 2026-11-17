@@ -27,19 +27,26 @@ class AdminM4pCustomerVerifyController extends ModuleAdminController
 
     public function postProcess(): void
     {
-        $action = Tools::getValue('cv_action');
-        if (!in_array($action, ['approve', 'reject'], true)) {
+        if (Tools::isSubmit('cv_approve')) {
+            $action = 'approve';
+            $idCustomer = (int) Tools::getValue('cv_approve');
+        } elseif (Tools::isSubmit('cv_reject')) {
+            $action = 'reject';
+            $idCustomer = (int) Tools::getValue('cv_reject');
+        } else {
             return;
         }
 
-        $customer = new Customer((int) Tools::getValue('id_customer'));
+        $customer = new Customer($idCustomer);
         if (!Validate::isLoadedObject($customer) || !$this->module->isPending((int) $customer->id)) {
             $this->errors[] = $this->module->getTranslator()->trans('This account is no longer waiting for approval.', [], 'Modules.M4pcustomerverify.Admin');
 
             return;
         }
 
-        $done = $action === 'approve' ? $this->module->approve($customer) : $this->module->reject($customer);
+        $groups = Tools::getValue('cv_group');
+        $idGroup = is_array($groups) ? (int) ($groups[$idCustomer] ?? 0) : 0;
+        $done = $action === 'approve' ? $this->module->approve($customer, $idGroup) : $this->module->reject($customer);
         if (!$done) {
             $this->errors[] = $this->module->getTranslator()->trans('The account could not be saved.', [], 'Modules.M4pcustomerverify.Admin');
 
@@ -64,9 +71,17 @@ class AdminM4pCustomerVerifyController extends ModuleAdminController
             'company' => ['title' => $trans->trans('Company', [], 'Admin.Global')],
             'siret' => ['title' => $trans->trans('Tax number', [], 'Modules.M4pcustomerverify.Admin')],
             'date_add' => ['title' => $trans->trans('Registered', [], 'Modules.M4pcustomerverify.Admin'), 'type' => 'datetime'],
+            'approval_group' => [
+                'title' => $trans->trans('Group after approval', [], 'Modules.M4pcustomerverify.Admin'),
+                'callback' => 'displayGroupSelect',
+                'search' => false,
+                'orderby' => false,
+            ],
         ];
 
-        $rows = $this->module->getPendingAccounts();
+        $rows = array_map(static function (array $row): array {
+            return $row + ['approval_group' => ''];
+        }, $this->module->getPendingAccounts());
 
         $helper = new HelperList();
         $helper->shopLinkType = '';
@@ -85,14 +100,33 @@ class AdminM4pCustomerVerifyController extends ModuleAdminController
         $this->context->smarty->assign('content', $this->content);
     }
 
+    /**
+     * Group picker for one pending account, preselected with the group from the module settings.
+     */
+    public function displayGroupSelect(string $value, array $row): string
+    {
+        $idCustomer = (int) $row['id_customer'];
+        $selected = (int) Configuration::get(M4p_CustomerVerify::CFG_GROUP);
+        $options = [0 => $this->module->getTranslator()->trans('Do not change the group', [], 'Modules.M4pcustomerverify.Admin')]
+            + $this->module->getApprovalGroups();
+
+        $html = '<select name="cv_group[' . $idCustomer . ']" class="fixed-width-xl" data-customer="' . $idCustomer . '">';
+        foreach ($options as $idGroup => $name) {
+            $html .= '<option value="' . (int) $idGroup . '"' . ((int) $idGroup === $selected ? ' selected' : '') . '>'
+                . htmlspecialchars($name, ENT_QUOTES) . '</option>';
+        }
+
+        return $html . '</select>';
+    }
+
     public function displayApproveLink(?string $token, int $id): string
     {
-        return $this->actionLink('approve', $id, 'icon-check', $this->module->getTranslator()->trans('Approve', [], 'Modules.M4pcustomerverify.Admin'));
+        return $this->actionButton('cv_approve', $id, 'icon-check', $this->module->getTranslator()->trans('Approve', [], 'Modules.M4pcustomerverify.Admin'));
     }
 
     public function displayRejectLink(?string $token, int $id): string
     {
-        return $this->actionLink('reject', $id, 'icon-remove', $this->module->getTranslator()->trans('Reject', [], 'Modules.M4pcustomerverify.Admin'));
+        return $this->actionButton('cv_reject', $id, 'icon-remove', $this->module->getTranslator()->trans('Reject', [], 'Modules.M4pcustomerverify.Admin'));
     }
 
     public function displayCustomerLink(?string $token, int $id): string
@@ -103,11 +137,13 @@ class AdminM4pCustomerVerifyController extends ModuleAdminController
             . htmlspecialchars($this->module->getTranslator()->trans('View', [], 'Admin.Actions'), ENT_QUOTES) . '</a>';
     }
 
-    private function actionLink(string $action, int $id, string $icon, string $label): string
+    /**
+     * Submits the list form, so the group picked in the same row travels with the decision.
+     */
+    private function actionButton(string $name, int $id, string $icon, string $label): string
     {
-        $url = self::$currentIndex . '&token=' . $this->token . '&cv_action=' . $action . '&id_customer=' . $id;
-
-        return '<a class="btn btn-default" href="' . htmlspecialchars($url, ENT_QUOTES) . '"><i class="' . $icon . '"></i> '
-            . htmlspecialchars($label, ENT_QUOTES) . '</a>';
+        // "name" before "class": HelperList's first-action regex rewrites the markup unless it finds "a…class="…btn…"".
+        return '<button type="submit" name="' . $name . '" value="' . $id . '" class="btn btn-default"><i class="' . $icon . '"></i> '
+            . htmlspecialchars($label, ENT_QUOTES) . '</button>';
     }
 }

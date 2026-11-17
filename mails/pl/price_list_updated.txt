@@ -1,0 +1,9 @@
+Cennik konta zaktualizowany - {shop_name}
+
+Witaj {firstname} {lastname},
+
+Twoje konto firmowe w sklepie {shop_name} zostało zaakceptowane, a jego cennik zaktualizowany.
+Po zalogowaniu zobaczysz nowe ceny: {login_url}
+
+Pozdrawiamy,
+{shop_name}

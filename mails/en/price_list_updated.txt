@@ -1,0 +1,9 @@
+The price list of your account has been updated - {shop_name}
+
+Hello {firstname} {lastname},
+
+Your company account at {shop_name} has been approved and its price list updated.
+Sign in to see your new prices: {login_url}
+
+Kind regards,
+{shop_name}
