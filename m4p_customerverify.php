@@ -20,16 +20,23 @@ class M4p_CustomerVerify extends Module
     public const CFG_ADMIN_EMAIL = 'M4P_CV_ADMIN_EMAIL';
     public const CFG_BUSINESS_ONLY = 'M4P_CV_BUSINESS_ONLY';
     public const CFG_GROUP = 'M4P_CV_GROUP';
+    public const CFG_GROUP_ONLY = 'M4P_CV_GROUP_ONLY';
+    public const CFG_KEEP_ACTIVE = 'M4P_CV_KEEP_ACTIVE';
     public const FIELD_BUSINESS = 'm4p_cv_business';
     public const FIELD_COMPANY = 'company';
     public const FIELD_TAX_NUMBER = 'siret';
+    public const NOTICE_REQUEST = 'request';
+    public const NOTICE_PRICE_LIST = 'price_list';
     public const ADMIN_CONTROLLER = 'AdminM4pCustomerVerify';
+
+    /** @var array<int, bool> customer id => account was inactive before the update being saved */
+    private $wasInactive = [];
 
     public function __construct()
     {
         $this->name = 'm4p_customerverify';
         $this->tab = 'administration';
-        $this->version = '1.2.0';
+        $this->version = '1.3.0';
         $this->author = 'Modules4Presta';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -55,13 +62,17 @@ class M4p_CustomerVerify extends Module
         Configuration::updateValue(self::CFG_ADMIN_EMAIL, '');
         Configuration::updateValue(self::CFG_BUSINESS_ONLY, 1);
         Configuration::updateValue(self::CFG_GROUP, 0);
+        Configuration::updateValue(self::CFG_GROUP_ONLY, 1);
+        Configuration::updateValue(self::CFG_KEEP_ACTIVE, 0);
 
         return parent::install()
             && $this->installDb()
             && $this->registerHook('actionCustomerAccountAdd')
+            && $this->registerHook('actionObjectCustomerUpdateBefore')
             && $this->registerHook('actionObjectCustomerUpdateAfter')
             && $this->registerHook('additionalCustomerFormFields')
-            && $this->registerHook('validateCustomerFormFields');
+            && $this->registerHook('validateCustomerFormFields')
+            && $this->registerHook('actionFrontControllerSetMedia');
     }
 
     public function uninstall(): bool
@@ -70,6 +81,8 @@ class M4p_CustomerVerify extends Module
         Configuration::deleteByName(self::CFG_ADMIN_EMAIL);
         Configuration::deleteByName(self::CFG_BUSINESS_ONLY);
         Configuration::deleteByName(self::CFG_GROUP);
+        Configuration::deleteByName(self::CFG_GROUP_ONLY);
+        Configuration::deleteByName(self::CFG_KEEP_ACTIVE);
 
         return $this->uninstallDb() && parent::uninstall();
     }
@@ -82,12 +95,26 @@ class M4p_CustomerVerify extends Module
                 `date_add` DATETIME NOT NULL,
                 PRIMARY KEY (`id_customer`)
             ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;'
+        ) && $this->installNoticeTable();
+    }
+
+    public function installNoticeTable(): bool
+    {
+        return (bool) Db::getInstance()->execute(
+            'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'm4p_customerverify_notice` (
+                `id_customer` INT UNSIGNED NOT NULL,
+                `notice` VARCHAR(32) NOT NULL,
+                `date_add` DATETIME NOT NULL,
+                PRIMARY KEY (`id_customer`, `notice`)
+            ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;'
         );
     }
 
     protected function uninstallDb(): bool
     {
-        return (bool) Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'm4p_pending_verification`');
+        return (bool) Db::getInstance()->execute(
+            'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'm4p_pending_verification`, `' . _DB_PREFIX_ . 'm4p_customerverify_notice`'
+        );
     }
 
     private function isVerificationEnabled(): bool
@@ -98,6 +125,11 @@ class M4p_CustomerVerify extends Module
     private function isBusinessOnly(): bool
     {
         return (bool) Configuration::get(self::CFG_BUSINESS_ONLY);
+    }
+
+    private function keepsAccountActive(): bool
+    {
+        return (bool) Configuration::get(self::CFG_KEEP_ACTIVE);
     }
 
     /**
@@ -120,7 +152,9 @@ class M4p_CustomerVerify extends Module
                 ->setType('radio-buttons')
                 ->setLabel($this->trans('Account type', [], 'Modules.M4pcustomerverify.Shop'))
                 ->addAvailableValue('0', $this->trans('Private person', [], 'Modules.M4pcustomerverify.Shop'))
-                ->addAvailableValue('1', $this->trans('Company', [], 'Modules.M4pcustomerverify.Shop'))
+                ->addAvailableValue('1', $this->keepsAccountActive()
+                    ? $this->trans('Company (regular prices until the account is approved)', [], 'Modules.M4pcustomerverify.Shop')
+                    : $this->trans('Company', [], 'Modules.M4pcustomerverify.Shop'))
                 ->setValue(Tools::getValue(self::FIELD_BUSINESS) ? '1' : '0'),
         ];
 
@@ -251,8 +285,10 @@ class M4p_CustomerVerify extends Module
             return;
         }
 
-        $customer->active = false;
-        $customer->update();
+        if (!$this->keepsAccountActive()) {
+            $customer->active = false;
+            $customer->update();
+        }
 
         Db::getInstance()->execute(
             'INSERT IGNORE INTO `' . _DB_PREFIX_ . 'm4p_pending_verification` (`id_customer`, `date_add`)
@@ -260,6 +296,13 @@ class M4p_CustomerVerify extends Module
         );
 
         $this->notifyAdmin($customer);
+
+        if ($this->keepsAccountActive()) {
+            $this->addNotice((int) $customer->id, self::NOTICE_REQUEST);
+            $this->redirectToHome();
+
+            return;
+        }
 
         if (Validate::isLoadedObject($this->context->customer) && (int) $this->context->customer->id === (int) $customer->id) {
             $this->context->customer->logout();
@@ -278,31 +321,150 @@ class M4p_CustomerVerify extends Module
     }
 
     /**
-     * Activating a pending account (queue or the "Enable" switch in Customers) assigns the configured group and mails the customer.
+     * Sends the customer, still signed in, from the registration page to the home page, where the notice script shows
+     * the request notice. Checkout keeps its own flow.
+     */
+    private function redirectToHome(): void
+    {
+        $controller = $this->context->controller;
+        if (!$controller instanceof FrontController || $controller->ajax || ($controller->php_self ?? '') !== 'registration') {
+            return;
+        }
+
+        Tools::redirect($this->context->link->getPageLink('index', true));
+    }
+
+    /**
+     * Home page script that asks for the signed-in customer's notices; the page itself stays cacheable.
+     */
+    public function hookActionFrontControllerSetMedia(): void
+    {
+        if (!$this->isVerificationEnabled() || ($this->context->controller->php_self ?? '') !== 'index') {
+            return;
+        }
+
+        Media::addJsDef(['m4pCvNoticeUrl' => $this->context->link->getModuleLink($this->name, 'notice', [], true)]);
+        $this->context->controller->registerJavascript(
+            'm4p-cv-notice',
+            'modules/' . $this->name . '/views/js/notice.js',
+            ['position' => 'bottom', 'priority' => 200, 'attributes' => 'defer', 'version' => (string) filemtime(__DIR__ . '/views/js/notice.js')]
+        );
+    }
+
+    private function addNotice(int $idCustomer, string $notice): void
+    {
+        Db::getInstance()->execute(
+            'INSERT IGNORE INTO `' . _DB_PREFIX_ . 'm4p_customerverify_notice` (`id_customer`, `notice`, `date_add`)
+            VALUES (' . $idCustomer . ', \'' . pSQL($notice) . '\', NOW())'
+        );
+    }
+
+    private function removeNotice(int $idCustomer, string $notice): void
+    {
+        Db::getInstance()->delete('m4p_customerverify_notice', '`id_customer` = ' . $idCustomer . ' AND `notice` = \'' . pSQL($notice) . '\'');
+    }
+
+    /**
+     * Returns the customer's notices as texts and removes them, so each one is shown once.
+     *
+     * @return string[]
+     */
+    public function takeNotices(int $idCustomer): array
+    {
+        $codes = array_column(Db::getInstance()->executeS(
+            'SELECT `notice` FROM `' . _DB_PREFIX_ . 'm4p_customerverify_notice` WHERE `id_customer` = ' . $idCustomer . ' ORDER BY `date_add`'
+        ) ?: [], 'notice');
+        if (!$codes) {
+            return [];
+        }
+        Db::getInstance()->delete('m4p_customerverify_notice', '`id_customer` = ' . $idCustomer);
+
+        $texts = [];
+        foreach ($codes as $code) {
+            if ($code === self::NOTICE_REQUEST) {
+                $texts[] = $this->trans(
+                    'Your account is active. We have received your company account request – once it is approved, you will get an e-mail and see company prices.',
+                    [],
+                    'Modules.M4pcustomerverify.Shop'
+                );
+            } elseif ($code === self::NOTICE_PRICE_LIST) {
+                $texts[] = $this->trans('Your company account has been approved and its price list updated.', [], 'Modules.M4pcustomerverify.Shop');
+            }
+        }
+
+        return $texts;
+    }
+
+    public function hookActionObjectCustomerUpdateBefore(array $params): void
+    {
+        $customer = $params['object'] ?? null;
+        if (!$customer instanceof Customer || !(int) $customer->id || !$this->isPending((int) $customer->id)) {
+            return;
+        }
+
+        $this->wasInactive[(int) $customer->id] = !(bool) Db::getInstance()->getValue(
+            'SELECT `active` FROM `' . _DB_PREFIX_ . 'customer` WHERE `id_customer` = ' . (int) $customer->id
+        );
+    }
+
+    /**
+     * Switching "Enable" on for a pending account in Customers counts as approval; other edits of a pending account do not.
      */
     public function hookActionObjectCustomerUpdateAfter(array $params): void
     {
-        if (empty($params['object'])) {
+        $customer = $params['object'] ?? null;
+        if (!$customer instanceof Customer || !Validate::isLoadedObject($customer)) {
             return;
         }
 
-        /** @var Customer $customer */
-        $customer = $params['object'];
-        if (!Validate::isLoadedObject($customer) || !(int) $customer->active || !$this->isPending((int) $customer->id)) {
+        $wasInactive = $this->wasInactive[(int) $customer->id] ?? false;
+        unset($this->wasInactive[(int) $customer->id]);
+        if (!$wasInactive || !(int) $customer->active || !$this->isPending((int) $customer->id)) {
             return;
         }
 
+        $this->completeApproval($customer, true, (int) Configuration::get(self::CFG_GROUP));
+    }
+
+    /**
+     * Assigns the group (0 keeps the current ones), queues the home page notice and mails the customer: "activated" for a held
+     * account, "price list updated" when the group changed, otherwise "approved".
+     */
+    private function completeApproval(Customer $customer, bool $wasActivated, int $idGroup): void
+    {
         $this->removePending((int) $customer->id);
+        $this->removeNotice((int) $customer->id, self::NOTICE_REQUEST);
 
-        $idGroup = (int) Configuration::get(self::CFG_GROUP);
-        if ($idGroup && Validate::isLoadedObject(new Group($idGroup))) {
-            $customer->addGroups([$idGroup]);
-            // A direct update keeps Customer::update() from re-syncing groups from the admin form.
-            Db::getInstance()->update('customer', ['id_default_group' => $idGroup], 'id_customer = ' . (int) $customer->id);
-            $customer->id_default_group = $idGroup;
+        $groupChanged = $this->assignGroup($customer, $idGroup);
+        if ($groupChanged) {
+            $this->addNotice((int) $customer->id, self::NOTICE_PRICE_LIST);
         }
 
-        $this->sendCustomerMail($customer, 'account_activated', $this->trans('Your account has been activated', [], 'Modules.M4pcustomerverify.Admin'));
+        if ($wasActivated) {
+            $this->sendCustomerMail($customer, 'account_activated', $this->trans('Your account has been activated', [], 'Modules.M4pcustomerverify.Admin'));
+        } elseif ($groupChanged) {
+            $this->sendCustomerMail($customer, 'price_list_updated', $this->trans('The price list of your account has been updated', [], 'Modules.M4pcustomerverify.Admin'));
+        } else {
+            $this->sendCustomerMail($customer, 'account_approved', $this->trans('Your company account has been approved', [], 'Modules.M4pcustomerverify.Admin'));
+        }
+    }
+
+    private function assignGroup(Customer $customer, int $idGroup): bool
+    {
+        if (!$idGroup || !Validate::isLoadedObject(new Group($idGroup))) {
+            return false;
+        }
+
+        if (Configuration::get(self::CFG_GROUP_ONLY)) {
+            $customer->updateGroup([$idGroup]);
+        } else {
+            $customer->addGroups([$idGroup]);
+        }
+        // A direct update keeps Customer::update() from re-syncing groups from the admin form.
+        Db::getInstance()->update('customer', ['id_default_group' => $idGroup], 'id_customer = ' . (int) $customer->id);
+        $customer->id_default_group = $idGroup;
+
+        return true;
     }
 
     public function isPending(int $idCustomer): bool
@@ -318,13 +480,29 @@ class M4p_CustomerVerify extends Module
     }
 
     /**
-     * Approves a pending account; the group and the e-mail follow from hookActionObjectCustomerUpdateAfter.
+     * Approves a pending account: activates it when it was held, assigns the group and mails the customer.
+     *
+     * @param int $idGroup group chosen in the queue, 0 keeps the current groups
      */
-    public function approve(Customer $customer): bool
+    public function approve(Customer $customer, int $idGroup): bool
     {
-        $customer->active = true;
+        if ($idGroup && !array_key_exists($idGroup, $this->getApprovalGroups())) {
+            return false;
+        }
 
-        return (bool) $customer->update();
+        $wasActivated = !(int) $customer->active;
+        if ($wasActivated) {
+            // Removed first, so the update hook does not approve the account a second time.
+            $this->removePending((int) $customer->id);
+            $customer->active = true;
+            if (!$customer->update()) {
+                return false;
+            }
+        }
+
+        $this->completeApproval($customer, $wasActivated, $idGroup);
+
+        return true;
     }
 
     /**
@@ -333,14 +511,35 @@ class M4p_CustomerVerify extends Module
     public function reject(Customer $customer): bool
     {
         $this->removePending((int) $customer->id);
-        $customer->active = true;
-        if (!$customer->update()) {
-            return false;
+        $this->removeNotice((int) $customer->id, self::NOTICE_REQUEST);
+        if (!(int) $customer->active) {
+            $customer->active = true;
+            if (!$customer->update()) {
+                return false;
+            }
         }
 
         $this->sendCustomerMail($customer, 'account_rejected', $this->trans('Your company account request', [], 'Modules.M4pcustomerverify.Admin'));
 
         return true;
+    }
+
+    /**
+     * Groups an approved account can get: all except the visitor and guest groups.
+     *
+     * @return array<int, string> group id => name
+     */
+    public function getApprovalGroups(): array
+    {
+        $excluded = [(int) Configuration::get('PS_UNIDENTIFIED_GROUP'), (int) Configuration::get('PS_GUEST_GROUP')];
+        $groups = [];
+        foreach (Group::getGroups((int) $this->context->language->id) as $group) {
+            if (!in_array((int) $group['id_group'], $excluded, true)) {
+                $groups[(int) $group['id_group']] = (string) $group['name'];
+            }
+        }
+
+        return $groups;
     }
 
     /**
@@ -439,6 +638,8 @@ class M4p_CustomerVerify extends Module
                 Configuration::updateValue(self::CFG_ENABLED, (int) (bool) Tools::getValue(self::CFG_ENABLED));
                 Configuration::updateValue(self::CFG_BUSINESS_ONLY, (int) (bool) Tools::getValue(self::CFG_BUSINESS_ONLY));
                 Configuration::updateValue(self::CFG_GROUP, (int) Tools::getValue(self::CFG_GROUP));
+                Configuration::updateValue(self::CFG_GROUP_ONLY, (int) (bool) Tools::getValue(self::CFG_GROUP_ONLY));
+                Configuration::updateValue(self::CFG_KEEP_ACTIVE, (int) (bool) Tools::getValue(self::CFG_KEEP_ACTIVE));
                 Configuration::updateValue(self::CFG_ADMIN_EMAIL, $email);
                 $output .= $this->displayConfirmation($this->trans('Settings updated.', [], 'Modules.M4pcustomerverify.Admin'));
             }
@@ -466,7 +667,7 @@ class M4p_CustomerVerify extends Module
                 'input' => [
                     [
                         'type' => 'switch',
-                        'label' => $this->trans('Hold new accounts for approval', [], 'Modules.M4pcustomerverify.Admin'),
+                        'label' => $this->trans('Company account verification', [], 'Modules.M4pcustomerverify.Admin'),
                         'name' => self::CFG_ENABLED,
                         'is_bool' => true,
                         'values' => $switchValues,
@@ -484,12 +685,36 @@ class M4p_CustomerVerify extends Module
                         ),
                     ],
                     [
+                        'type' => 'switch',
+                        'label' => $this->trans('Account active before approval', [], 'Modules.M4pcustomerverify.Admin'),
+                        'name' => self::CFG_KEEP_ACTIVE,
+                        'is_bool' => true,
+                        'values' => $switchValues,
+                        'desc' => $this->trans(
+                            'On: the customer can sign in and shop right after registering, with the default customer group. Approval only changes the group. Off: the account stays inactive until approved.',
+                            [],
+                            'Modules.M4pcustomerverify.Admin'
+                        ),
+                    ],
+                    [
                         'type' => 'select',
                         'label' => $this->trans('Group after approval', [], 'Modules.M4pcustomerverify.Admin'),
                         'name' => self::CFG_GROUP,
                         'options' => ['query' => $groups, 'id' => 'id_group', 'name' => 'name'],
                         'desc' => $this->trans(
                             'Added to the customer and set as the default group when the account is approved.',
+                            [],
+                            'Modules.M4pcustomerverify.Admin'
+                        ),
+                    ],
+                    [
+                        'type' => 'switch',
+                        'label' => $this->trans('Only the group after approval', [], 'Modules.M4pcustomerverify.Admin'),
+                        'name' => self::CFG_GROUP_ONLY,
+                        'is_bool' => true,
+                        'values' => $switchValues,
+                        'desc' => $this->trans(
+                            'On: the approved account keeps only this group, so its prices and any full-page cache follow it. Off: the group is added next to the ones the account already has.',
                             [],
                             'Modules.M4pcustomerverify.Admin'
                         ),
@@ -519,6 +744,8 @@ class M4p_CustomerVerify extends Module
             self::CFG_ENABLED => (int) Configuration::get(self::CFG_ENABLED),
             self::CFG_BUSINESS_ONLY => (int) Configuration::get(self::CFG_BUSINESS_ONLY),
             self::CFG_GROUP => (int) Configuration::get(self::CFG_GROUP),
+            self::CFG_GROUP_ONLY => (int) Configuration::get(self::CFG_GROUP_ONLY),
+            self::CFG_KEEP_ACTIVE => (int) Configuration::get(self::CFG_KEEP_ACTIVE),
             self::CFG_ADMIN_EMAIL => (string) Configuration::get(self::CFG_ADMIN_EMAIL),
         ];
 

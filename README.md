@@ -38,9 +38,26 @@ or company). A company account requires the company name and a tax number, saved
 `company` and `siret`: a Polish NIP is checked by its checksum, an EU VAT number in VIES when
 `m4p_viesintegration` is enabled (an unavailable VIES does not block registration). Only company
 accounts are held. Pending accounts are listed in **Customers → Accounts to approve**:
-**Approve** activates the account, adds the configured group and sets it as the default one;
-**Reject** activates it as a regular account. The customer gets an e-mail either way. Switching
-**Enable** on in **Customers** still counts as approval.
+**Approve** activates the account and assigns the group picked in its row (preselected with **Group
+after approval**, or "Do not change the group"); **Reject** activates it as a regular account. Both
+are form buttons. The customer gets an e-mail either way: "activated" for a held account, "price list
+updated" when approval assigns a group to an active account, otherwise "company account approved". Switching **Enable** on for a pending
+account in **Customers** also counts as approval; other edits of a pending account leave it in the queue.
+
+### Account active before approval
+
+With **Account active before approval** on, a company account is not held: the customer stays signed in,
+goes from the registration page to the home page and shops at the default customer group's prices. The
+account waits in **Accounts to approve**, and the shop gets the usual e-mail. **Approve** assigns the group
+and sends the "price list updated" e-mail; **Reject** leaves it a regular account.
+
+### Notices on the home page
+
+A signed-in customer sees a one-time notice at the top of the home page content: after registering a
+company account with **Account active before approval** on, and after approval assigns a group. The home
+page stays cacheable – a small script loads the notices from an uncached module controller and shows them
+as a theme alert (`.alert.alert-success.m4p-cv-notice`, first in `#wrapper > .container`, otherwise in
+`#notifications`). Each notice is removed once shown.
 
 ### What it does not do
 
@@ -56,10 +73,10 @@ tells you; the decision stays with a person.
 | Requirements | a working shop e-mail configuration |
 | Optional | `m4p_viesintegration` for VIES checks of EU VAT numbers; without it only the Polish NIP checksum is verified |
 | Multistore | Settings and pending accounts are shared across shops |
-| Themes | The message uses the theme's standard notifications on the sign-in page |
+| Themes | Messages use the theme's standard notifications and alert classes |
 
-The module performs no core overrides. It creates one table, `m4p_pending_verification`, and one
-back-office tab, and removes both on uninstall.
+The module performs no core overrides. It creates two tables, `m4p_pending_verification` and
+`m4p_customerverify_notice`, and one back-office tab, and removes them on uninstall.
 
 ## Installation
 
@@ -73,9 +90,11 @@ back-office tab, and removes both on uninstall.
 
 | Setting | Description |
 |---|---|
-| **Hold new accounts for approval** | Turns verification on. Off means registration works as usual. |
+| **Company account verification** | Turns verification on. Off means registration works as usual. |
 | **Only company accounts** | Adds the account type choice with company name and tax number, and holds only company accounts. |
-| **Group after approval** | Added to the customer and set as the default group on approval. |
+| **Account active before approval** | On: the account works right after registering with the default customer group; approval only changes the group. Off: the account stays inactive until approved. |
+| **Group after approval** | Added to the customer and set as the default group on approval; the queue preselects it in each row. |
+| **Only the group after approval** | On: the approved account keeps only that group, so prices and a full-page cache keyed on the customer's group follow it. Off: the group is added next to the existing ones. |
 | **Notification e-mail** | Where the notice about a new account is sent. Empty means the shop e-mail. |
 
 ## Frequently asked questions
@@ -86,7 +105,8 @@ watches that change and sends the invitation.
 
 **What does the customer see right after registering?**
 A message saying the account is waiting for approval. They are signed out, because the account is
-not active yet.
+not active yet. With **Account active before approval** on, they stay signed in and see a notice on the
+home page that the company account request was received.
 
 **Does an existing customer get the e-mail again when I edit their details?**
 No. The invitation is sent once, when an account that was waiting for approval becomes active.
@@ -95,7 +115,7 @@ No. The invitation is sent once, when an account that was waiting for approval b
 Nothing — they are untouched and stay active. Verification applies to registrations from now on.
 
 **What happens to pending accounts when I uninstall the module?**
-The table is dropped. The accounts stay in PrestaShop, inactive, and you activate them by hand.
+The tables are dropped. The accounts stay in PrestaShop, inactive, and you activate them by hand.
 
 ---
 

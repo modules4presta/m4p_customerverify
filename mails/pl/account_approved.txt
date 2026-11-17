@@ -1,0 +1,9 @@
+Konto firmowe zaakceptowane - {shop_name}
+
+Witaj {firstname} {lastname},
+
+Twoje konto w sklepie {shop_name} zostało zaakceptowane jako konto firmowe.
+Po zalogowaniu zobaczysz ceny dla firm: {login_url}
+
+Pozdrawiamy,
+{shop_name}
